@@ -8,6 +8,7 @@ local playerInventory = dataStoreService:GetDataStore('playerInventory')
 local playerCoins = dataStoreService:GetDataStore('playerInventory', 'Coins')
 local playerDiamonds = dataStoreService:GetDataStore('playerInventory', 'Diamonds')
 local playerLevel = dataStoreService:GetDataStore('playerInventory', 'Level')
+local playerTasks = dataStoreService:GetDataStore('playerInventory', 'Tasks')
 
 -- ReplicatedStorage
 local remotes = replicatedStorage.Remotes
@@ -80,6 +81,40 @@ end)
 -- Purchase Door 
 remotes.PurchaseDoor.OnServerEvent:Connect(function(player, coins, level)
 	updateData(player, coins, level)
+end)
+
+-- Claim Gifts
+remotes.ClaimTaskGift.OnServerEvent:Connect(function(player, kind, taskName)
+	local success, currentTasks = pcall(function()
+		return playerTasks:GetAsync(player.UserId)
+	end)
+	if success then
+		currentTasks[kind][taskName].Received = 1
+		local success, newTasks = pcall(function()
+			return playerTasks:UpdateAsync(player.UserId, currentTasks)
+		end)
+		if success then
+			if kind == 'DailyTasks' then
+				player.DailyTasksReceived:FindFirstChild(taskName).Value = newTasks[kind][taskName].Received
+			end
+			
+			-- Update Coins
+			local success, newCoinsValue = pcall(function()
+				return playerCoins:IncrementAsync(player.UserId, newTasks[kind][taskName].Gifts.Coins.Value)
+			end)
+			if success then
+				player.leaderstats.Coins.Value = newCoinsValue
+			end
+
+			-- Update Diamond
+			local success, newDiamondValue = pcall(function()
+				return playerDiamonds:IncrementAsync(player.UserId, newTasks[kind][taskName].Gifts.Diamonds.Value)
+			end)
+			if success then
+				player.leaderstats.Diamonds.Value = newDiamondValue
+			end
+		end
+	end
 end)
 -----------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------------------
