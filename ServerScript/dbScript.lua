@@ -35,21 +35,12 @@ local attributesList = {
 	'Rebirth',
 }
 
-game.Players.PlayerAdded:Connect(mainfunc)
-game.Players.PlayerRemoving:Connect(function(player)
-	local success, newOnlineTime = pcall(function()
-		return playerOnlineTime:Update(player.UserId, player.OnlineTime.Value)
-	end)
-	if success then
-		print('Saved online time!')
-	end
-end)
 -----------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------------------
 -- FUNCTION
 function mainfunc(player)
 	local playerCharacter = workspace:WaitForChild(player.Name)
-	local location = game.Workspace.MainFolder_Workspace.Checkpoint.StaterArea.SpawnLocation
+	local location = game.Workspace.MainFolder_Workspace.Checkpoint.StarterArea.SpawnLocation.Position
 
 	playerCharacter.HumanoidRootPart.CFrame = CFrame.new(location.X, location.Y + 1, location.Z)
 
@@ -57,11 +48,14 @@ function mainfunc(player)
 	coins(player)
 	diamonds(player)
 	pets(player)
+	dailyGift(player)
+	tasks(player)
 	epicBoost(player)
 	legendaryBoost(player)
 	rebirth(player)
 	previousDate(player)
-
+	
+	remotes.UpdateCurrencyClient:FireClient(player)
 	remotes.CreateLibrary:FireClient(player)
 	remotes.CreateTeleport:FireClient(player)
 	remotes.CreateFruitInventory:FireClient(player)
@@ -107,7 +101,8 @@ function coins(player)
 		return playerCoins:GetAsync(player.UserId)
 	end)
 
-	if success then
+	if currentCoins ~= nil then
+		print(currentCoins)
 		player.leaderstats.Coins.Value = currentCoins
 	else
 		replicatedStorage.Remotes.Newplayer:FireClient(player)
@@ -121,12 +116,13 @@ function level(player)
 	local success, currentLevel = pcall(function()
 		return playerLevel:GetAsync(player.UserId)
 	end) 
-
 	if success then
-		player.Level.Value = currentLevel
-	else
-		player.Level.Value = 1
-		playerLevel:SetAsync(player.UserId, 1)
+		if currentLevel ~= nil then
+			player.Level.Value = currentLevel
+		else
+			player.Level.Value = 1
+			playerLevel:SetAsync(player.UserId, 1)
+		end
 	end
 end
 
@@ -135,12 +131,13 @@ function diamonds(player)
 	local success, currentDiamonds = pcall(function()
 		return playerDiamonds:GetAsync(player.UserId)
 	end)
-
 	if success then
-		player.leaderstats.Diamonds.Value = currentDiamonds
-	else
-		player.leaderstats.Diamonds.Value = 0
-		playerDiamonds:SetAsync(player.UserId, 0)
+		if currentDiamonds ~= nil then
+			player.leaderstats.Diamonds.Value = currentDiamonds
+		else
+			player.leaderstats.Diamonds.Value = 0
+			playerDiamonds:SetAsync(player.UserId, 0)
+		end
 	end
 end
 
@@ -151,18 +148,19 @@ function pets(player)
 	local success, currentPets = pcall(function()
 		return playerPets:GetAsync(player.UserId)
 	end)
-
 	if success then
-		local petsList = currentPets
-		for index, pet in pairs (petsData) do
-			if not petsList[pet.key] then
-				table.insert(petsList, pet)
+		if currentPets ~= nil then
+			local petsList = currentPets
+			for index, pet in pairs (petsData) do
+				if not petsList[pet.key] then
+					table.insert(petsList, pet)
+				end
 			end
+			updatePetsClient(player, petsList)
+		else
+			playerPets:SetAsync(player.UserId, petsData)
+			updatePetsClient(player, petsData)
 		end
-		updatePetsClient(player, petsList)
-	else
-		playerPets:SetAsync(player.UserId, petsData)
-		updatePetsClient(player, petsData)
 	end
 end
 
@@ -216,12 +214,13 @@ function legendaryBoost(player)
 	local success, currentLegendaryBoost = pcall(function()
 		return playerLegendaryBoost:GetAsync(player.UserId)
 	end)
-
 	if success then
-		player.LegendaryBoost.Value = currentLegendaryBoost
-	else
-		playerLegendaryBoost:SetAsync(player.UserId, 0)
-		player.LegendaryBoost.Value = 0
+		if currentLegendaryBoost ~= nil then
+			player.LegendaryBoost.Value = currentLegendaryBoost
+		else
+			playerLegendaryBoost:SetAsync(player.UserId, 0)
+			player.LegendaryBoost.Value = 0
+		end
 	end
 end
 
@@ -230,12 +229,13 @@ function epicBoost(player)
 	local success, currentEpicBoost = pcall(function()
 		return playerEpicBoost:GetAsync(player.UserId)
 	end)
-
 	if success then
-		player.EpicBoost.Value = currentEpicBoost
-	else
-		playerEpicBoost:SetAsync(player.UserId, 0)
-		player.EpicBoost.Value = 0
+		if currentEpicBoost ~= nil then
+			player.EpicBoost.Value = currentEpicBoost
+		else
+			playerEpicBoost:SetAsync(player.UserId, 0)
+			player.EpicBoost.Value = 0
+		end
 	end
 end
 
@@ -244,12 +244,13 @@ function rebirth(player)
 	local success, currentRebirth = pcall(function()
 		return playerRebirth:GetAsync(player.UserIds)
 	end)
-
 	if success then
-		player.leaderstats.Rebirth.Value = currentRebirth
-	else
-		playerRebirth:SetAsync(player.UserId, 0)
-		player.leaderstats.Rebirth.Value = 0
+		if currentRebirth ~= nil then
+			player.leaderstats.Rebirth.Value = currentRebirth
+		else
+			playerRebirth:SetAsync(player.UserId, 0)
+			player.leaderstats.Rebirth.Value = 0
+		end
 	end
 end
 
@@ -261,8 +262,10 @@ function dailyGift(player)
 		return playerDailyGift:GetAsync(player.UserId)
 	end)
 
-	if not success then
-		playerDailyGift:SetAsync(player.UserId, dailyGiftData)
+	if success then
+		if currentDailyGift == nil then
+			playerDailyGift:SetAsync(player.UserId, dailyGiftData)
+		end
 	end
 end
 
@@ -273,28 +276,29 @@ function tasks(player)
 	local success, currentTasks = pcall(function()
 		return playerTasks:GetAsync(player.UserId)
 	end)
-
 	if success then
-		for _, taskType in pairs(tasksData) do
-			if currentTasks[taskType.key] then
-				for _, task in pairs (tasksData[taskType]) do
-					if not currentTasks[taskType] then
-						table.insert(currentTasks, task)
+		if currentTasks ~= nil then
+			for _, taskType in pairs(tasksData) do
+				if currentTasks[taskType.key] then
+					for _, task in pairs (tasksData[taskType]) do
+						if not currentTasks[taskType] then
+							table.insert(currentTasks, task)
+						end
 					end
+				else
+					table.insert(currentTasks, taskType)
 				end
-			else
-				table.insert(currentTasks, taskType)
 			end
-		end
 
-		local success, newTasks = pcall(function()
-			return playerTasks:UpdateAsync(player.UserId, currentTasks)
-		end)
-		if success then
-			print('Updated tasks!')
+			local success, newTasks = pcall(function()
+				return playerTasks:UpdateAsync(player.UserId, currentTasks)
+			end)
+			if success then
+				print('Updated tasks!')
+			end
+		else
+			playerTasks:SetAsync(player.UserId, tasksData)
 		end
-	else
-		playerTasks:SetAsync(player.UserId, tasksData)
 	end
 end
 
@@ -303,12 +307,13 @@ function onlineTime(player)
 	local success, currentOnlineTime = pcall(function()
 		return playerOnlineTime:GetAsync(player.UserId)
 	end)
-
 	if success then
-		player.OnlineTime.Value = currentOnlineTime
-	else
-		playerOnlineTime:SetAsync(player.UserId, 0)
-		player.OnlineTime.Value = 0
+		if currentOnlineTime ~= nil then
+			player.OnlineTime.Value = currentOnlineTime
+		else
+			playerOnlineTime:SetAsync(player.UserId, 0)
+			player.OnlineTime.Value = 0
+		end
 	end
 end
 
@@ -317,12 +322,13 @@ function numOfDates(player)
 	local success, currentNumOfDates = pcall(function()
 		return playerNumOfDates:GetAsync(player.UserId)
 	end)
-
 	if success then
-		player.Streak.Value = currentNumOfDates
-	else
-		playerNumOfDates:SetAsync(player.UserId, 1)
-		player.Streak.Value = 1
+		if currentNumOfDates ~= nil then
+			player.Streak.Value = currentNumOfDates
+		else
+			playerNumOfDates:SetAsync(player.UserId, 1)
+			player.Streak.Value = 1
+		end
 	end
 end
 
@@ -340,14 +346,14 @@ function previousDate(player)
 	local success, currentPreviousDate = pcall(function()
 		return playerPreviousDate:GetAsync(player.UserId)
 	end)
-
 	if success then
-		updateDate(player, currentPreviousDate)
-	else
-		playerPreviousDate:SetAsync(player.UserId, newDate)
-		updateDate(player, newDate)
+		if currentPreviousDate ~= nil then
+			updateDate(player, currentPreviousDate)
+		else
+			playerPreviousDate:SetAsync(player.UserId, newDate)
+			updateDate(player, newDate)
+		end
 	end
-
 end
 
 function lastDay(Today)
@@ -468,6 +474,7 @@ function updateDailyGiftsReceived(player)
 		return playerDailyGift:GetAsync(player.UserId)
 	end)
 	if success then
+		print(currentDailyGift)
 		for i = 1, 7 do
 			local address = 'Day'..tostring(i)
 			local newDay = Instance.new('IntValue')
@@ -485,11 +492,13 @@ function updateDailyTasksReceived(player)
 	if success then
 		local dailyTasks = currentTasks['DailyTasks']
 
-		for _, task in pairs(dailyTasks) do
-			local newDailyTask = Instance.new('IntValue')
-			newDailyTask.Name = task.Name
-			newDailyTask.Parent = player.DailyTasksReceived
-			newDailyTask.Value = task.Received
+		for _, t in pairs(dailyTasks) do
+			if t.Received then
+				local newDailyTask = Instance.new('IntValue')
+				newDailyTask.Name = t.Name
+				newDailyTask.Parent = player.DailyTasksReceived
+				newDailyTask.Value = t.Received
+			end
 		end
 	end
 end
@@ -580,6 +589,7 @@ function updateDate(player, previousDay)
 		updateDailyGiftsReceived(player)
 		updateDailyTasksReceived(player)
 	end
+
 end	
 -----------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------------------
@@ -601,7 +611,6 @@ remotes.UpdateDiamond.OnServerEvent:Connect(function(player, increasingDiamond)
 	local success, newDiamondValue = pcall(function()
 		return playerDiamonds:IncrementAsync(player.UserId, increasingDiamond)
 	end)
-
 	if success then
 		player.leaderstats.Diamonds.Value = newDiamondValue
 	end
@@ -617,7 +626,7 @@ remotes.Rebirth.OnServerEvent:Connect(function(player)
 	end
 
 	local success, updatedLevel = pcall(function()
-    	return playerLevel:UpdateAsync(player.UserId, 1)
+		return playerLevel:UpdateAsync(player.UserId, 1)
 	end)
 	if success then
 		player.Level.Value = updatedLevel
@@ -634,79 +643,12 @@ remotes.Rebirth.OnServerEvent:Connect(function(player)
 	playerCharacter.Humanoid.Health = 0
 end)
 
-remotes.ProductsProcessing.OnServerEvent:Connect(function(player, kind, indexNum)
-    local storeData = require(replicatedStorage.JSON.StoreData)
-	local productDetail = storeData[kind][indexNum]
-	
-	if productDetail.Id == '' then -- Không mua bằng robux
-		if productDetail.Currency == 'Diamonds' then
-            local success, newDiamondValue = pcall(function()
-                return playerDiamonds:IncrementAsync(player.UserId, -productDetail.Price)
-            end)
-            if success then
-                player.leaderstats.Diamonds.Value = newDiamondValue
-            end
-		elseif productDetail.Currency == 'Coins' then
-			local success, newCoinsValue = pcall(function()
-                return playerCoins:IncrementAsync(player.UserId, -productDetail.Price)
-            end)
-            if success then
-                player.leaderstats.Coins.Value = newCoinsValue
-            end
-		end
-		
-		if kind == 'Gold' then
-            local success, newCoinsValue = pcall(function()
-                return playerCoins:IncrementAsync(player.UserId, productDetail.Value)
-            end)
-			if success then
-                player.leaderstats.Coins.Value = newCoinsValue
-            end
-		elseif kind == 'Boost' then
-			player.OnBoosting:FindFirstChild(productDetail.Individual).Percentage.Value += productDetail.Value
-			
-			local product = Instance.new('IntValue')
-			product.Name = productDetail.Name
-			product.Parent = player.OnBoosting:FindFirstChild(productDetail.Individual)
-			product.Value = productDetail.Time
-			
-			coroutine.wrap(limitTime)(player, product, productDetail)
-		end
-	else -- mua bằng robux
-		if kind == 'Diamond' then
-            local success, newDiamondValue = pcall(function()
-                return playerDiamonds:IncrementAsync(player.UserId, productDetail.Value)
-            end)
-			if success then
-                player.leaderstats.Diamonds.Value = newDiamondValue
-            end
-		elseif kind == 'Boost' then
-			if productDetail.Individual == 'Epic' then
-				local success, newEpicBoost = pcall(function()
-                    return playerEpicBoost:UpdateAsync(player.UserId, 1)
-                end)
-                if success then
-                    player.EpicBoost.Value = newEpicBoost
-                end
-			elseif productDetail.Individual == 'Legendary' then
-				local success, newLegendaryBoost = pcall(function()
-                    return playerLegendaryBoost:UpdateAsync(player.UserId, 1)
-                end)
-                if success then
-                    player.LegendaryBoost.Value = newLegendaryBoost
-                end
-			end
-		end
+game.Players.PlayerAdded:Connect(mainfunc)
+game.Players.PlayerRemoving:Connect(function(player)
+	local success, newOnlineTime = pcall(function()
+		return playerOnlineTime:Update(player.UserId, player.OnlineTime.Value)
+	end)
+	if success then
+		print('Saved online time!')
 	end
-	
-	remotes.UpdateCurrencyClient:FireClient(player)
 end)
-
-function limitTime(player, product, productDetail)
-	while product.Value > 0 do
-		task.wait(1)
-		product.Value -= 1
-	end
-	
-	player.OnBoosting:FindFirstChild(productDetail.Individual).Percentage.Value /= (1 + productDetail.Value)
-end
