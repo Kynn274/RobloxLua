@@ -1,16 +1,30 @@
-local Players = game:GetService("Players")
-local DataStoreService = game:GetService('DataStoreService')
-local DataStore = DataStoreService:GetDataStore('MyDataStore1')
-local tweenService = game.TweenService
+-- Service
+local dataStoreService = game:GetService('DataStoreService')
+local replicatedStorage = game:GetService('ReplicatedStorage')
+local tweenService = game:GetService('TweenService')
 
+-- DataStore
+local playerInventory = dataStoreService:GetDataStore('playerInventory')
+local playerCoins = dataStoreService:GetDataStore('playerInventory', 'Coins')
+local playerDiamonds = dataStoreService:GetDataStore('playerInventory', 'Diamonds')
+local playerLevel = dataStoreService:GetDataStore('playerInventory', 'Level')
+
+-- ReplicatedStorage
+local remotes = replicatedStorage.Remotes
+
+-- Workspace
 local mainFolder_Workspace = workspace.MainFolder_Workspace
 local playerPets = mainFolder_Workspace.PlayerPets
-local areasData = require(game.ReplicatedStorage.JSON.AreasData)
 local drops = mainFolder_Workspace.Drops
-local t=1
+
+-- Data
+local areasData = require(replicatedStorage.JSON.AreasData)
+
+-- Var
+local t = 1
 local touched = 0
 
-Players.PlayerAdded:Connect(function(player)
+game.Players.PlayerAdded:Connect(function(player)
 	local folder = Instance.new("Folder")
 	folder.Name = player.Name
 	folder.Parent = playerPets
@@ -20,30 +34,65 @@ Players.PlayerAdded:Connect(function(player)
 	end
 end)
 
-Players.PlayerRemoving:Connect(function(player)
+game.Players.PlayerRemoving:Connect(function(player)
 	if playerPets:FindFirstChild(player.Name) then
 		playerPets:FindFirstChild(player.Name):Destroy()
 	end
 end)
 
+-----------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------
+-- REMOTES
+
 -- Drop attack 
-game.ReplicatedStorage.Remotes.StopDamaging.OnServerEvent:Connect(function(player, pet)
+remotes.StopDamaging.OnServerEvent:Connect(function(player, pet)
 	pet.Attack.Value = nil
 	game.ReplicatedStorage.Remotes.UnAttackPet:FireClient(player, pet.Name)
 end)
 
+-- Equip pets
+remotes.EquipPet.OnServerEvent:Connect(function(player, petName)
+	print(petName)
+	if player.Pets:FindFirstChild(petName) then
+		local petModel = replicatedStorage.Pets:FindFirstChild(petName):Clone()
+		petModel.Parent = playerPets:FindFirstChild(player.Name)
+		
+		local Speed = Instance.new('IntValue')
+		Speed.Name = 'Speed'
+		Speed.Parent = petModel
+		Speed.Value = player.PetLibrary:FindFirstChild(petName).damage.Value
+	end
+end)
+
+remotes.UnequipPets.OnServerEvent:Connect(function(player, petName)
+	playerPets:FindFirstChild(player.Name):FindFirstChild(petName):Destroy()
+end)
+
+-- Tele
+remotes.Tele.OnServerEvent:Connect(function(player, area)
+	local playerModel = game.Workspace:WaitForChild(player.Name)
+	local checkpoints = mainFolder_Workspace.Checkpoint
+	local spawnLocation = checkpoints:FindFirstChild(area).SpawnLocation 
+	
+	playerModel.HumanoidRootPart.CFrame = CFrame.new(spawnLocation.Position.X, spawnLocation.Position.Y + 2, spawnLocation.Position.Z)
+end)
+-- 
+-- Purchase Door 
+remotes.PurchaseDoor.OnServerEvent:Connect(function(player, coins, level)
+	updateData(player, coins, level)
+end)
+-----------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------
+-- FUNCTION
+
 function returnt(t)
-	t=t-1
-	return t
+	return t - 1
 end
 
 for _, drop in pairs(drops:GetDescendants()) do
 	if drop:IsA("Model") then
-		--print(1)
-		drop.Health.Value = drop.MaxHealth.Value
-		
+		drop.Health.Value = drop.MaxHealth.Value		
 		drop.ClickDetector.MouseClick:Connect(function(player)
-			
 			local currentPlayerPets = playerPets[player.Name]
 			
 			if #currentPlayerPets:GetChildren() > 0 then
@@ -52,7 +101,7 @@ for _, drop in pairs(drops:GetDescendants()) do
 				for _, pet in pairs(currentPlayerPets:GetChildren()) do
 					if pet.Attack.Value == nil then
 						pet.Attack.Value = drop
-						game.ReplicatedStorage.Remotes.AttackingPet:FireClient(player, pet.Name)
+						remotes.AttackingPet:FireClient(player, pet.Name)
 						check = true
 						task.wait(0.5)
 						break
@@ -62,7 +111,7 @@ for _, drop in pairs(drops:GetDescendants()) do
 				if check == false then
 					for _, pet in pairs(currentPlayerPets:GetChildren()) do
 						pet.Attack.Value = nil
-						game.ReplicatedStorage.Remotes.UnAttackPet:FireClient(player, pet.Name)
+						remotes.UnAttackPet:FireClient(player, pet.Name)
 					end
 				end						
 			end
@@ -72,51 +121,27 @@ end
 
 -- Update Data
 function updateData(player, coins, level)
-	player.leaderstats.Coins.Value = coins
-	player.Level.Value = level
-	
-	local Data = DataStore:GetAsync(tostring(player.UserId))
-	Data.Coins = coins
-	Data.Level = level
-	DataStore:SetAsync(tostring(player.UserId), Data)
-	
-	game.ReplicatedStorage.Remotes.GetPlayerData:FireClient(player, Data)
+	-- Update Coins
+	local success, newCoinsValue = pcall(function()
+		return playerCoins:UpdateAsync(player.UserId, coins)
+	end)
+	if success then
+		player.leaderstats.Coins.Value = newCoinsValue
+	end
+
+	-- Update Level
+	local success, newLevel = pcall(function()
+		return playerLevel:UpdateAsync(player.UserId, level)
+	end)
+	if success then
+		player.Level.Value = newLevel
+	end
+
+	remotes.UpdateCurrencyClient:FireClient(player)
 	touched = 0
 end
 
--- Equip pets
-game.ReplicatedStorage.Remotes.EquipPet.OnServerEvent:Connect(function(player, petName)
-	print(petName)
-	if player.Pets:FindFirstChild(petName) then
-		local petModel = game.ReplicatedStorage.Pets:FindFirstChild(petName):Clone()
-		petModel.Parent = workspace.MainFolder_Workspace.PlayerPets:FindFirstChild(player.Name)
-		
-		local Speed = Instance.new('IntValue')
-		Speed.Name = 'Speed'
-		Speed.Parent = petModel
-		Speed.Value = player.PetLibrary:FindFirstChild(petName).damage.Value
-	end
-end)
-
-game.ReplicatedStorage.Remotes.UnequipPets.OnServerEvent:Connect(function(player, petName)
-	workspace.MainFolder_Workspace.PlayerPets:FindFirstChild(player.Name):FindFirstChild(petName):Destroy()
-end)
-
--- Tele
-game.ReplicatedStorage.Remotes.Tele.OnServerEvent:Connect(function(player, area)
-	local playerModel = game.Workspace:WaitForChild(player.Name)
-	local checkpoints = game.Workspace.MainFolder_Workspace.Checkpoint
-	local spawnLocation = checkpoints:FindFirstChild(area).SpawnLocation 
-	
-	playerModel.HumanoidRootPart.CFrame = CFrame.new(spawnLocation.Position.X, spawnLocation.Position.Y + 2, spawnLocation.Position.Z)
-end)
-
--- Purchase Door 
-game.ReplicatedStorage.Remotes.PurchaseDoor.OnServerEvent:Connect(function(player, coins, level)
-	updateData(player, coins, level)
-end)
-
-for _, door in pairs(game.Workspace.MainFolder_Workspace.Doors:GetChildren()) do
+for _, door in pairs(mainFolder_Workspace.Doors:GetChildren()) do
 	local number = 0
 	local touchedNumber = 0
 	local playerModel
@@ -141,7 +166,7 @@ for _, door in pairs(game.Workspace.MainFolder_Workspace.Doors:GetChildren()) do
 			local area = areasData[areasData[door.Name].NextArea]
 
 			if player and player.Level.Value < area.Location then
-				game.ReplicatedStorage.Remotes.RequestPurchaseDoor:FireClient(player, door.Name)
+				remotes.RequestPurchaseDoor:FireClient(player, door.Name)
 			end
 			
 			number = 0
