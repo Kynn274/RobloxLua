@@ -20,18 +20,18 @@ local function destroyDrop(drop)
 	local money = drop.Parent
 	local oldParent = drop.Parent
 	
-	player.leaderstats.Coins.Value += money.Money.Value * (1 + player.leaderstats.Rebirth.Value / 2)
+	local increasingMoney = money.Money.Value * (1 + player.leaderstats.Rebirth.Value / 2) * (1 + player.OnBoosting.Coins.Percentage.Value)
 	
 	drop.Parent= despawnedDrops
 	
-	local random=math.random(1,100)
-	if random <=20 then
-		player.leaderstats.Diamonds.Value += 1
-		game.ReplicatedStorage.Remotes.UpdateDiamond:FireServer(player.leaderstats.Diamonds.Value)
+	local random = math.random(1,100)
+	if random <= 20 * (1 + player.OnBoosting.Diamonds.Percentage.Value) then
+		local increasingDiamond = 1
+		remotes.UpdateDiamond:FireServer(increasingDiamond)
 		task.wait(0.5)
 	end
 	
-	game.ReplicatedStorage.Remotes.UpdateMoney:FireServer(player.leaderstats.Coins.Value)
+	remotes.UpdateMoney:FireServer(increasingMoney)
 	task.wait(2)
 	drop.Health.Value = drop.MaxHealth.Value
 	drop.Parent = oldParent
@@ -92,9 +92,9 @@ end)
 
 remotes.UnAttackPet.OnClientEvent:Connect(function(petName)
 	for _, pet in pairs(player.PlayerGui.PetsDisplayGUI.SelectedFruits.ScrollingFrame:GetChildren()) do
-		if pet:IsA('ImageLabel') then
-			if pet.Name == petName and pet.Frame.Visible == true then
-				pet.Frame.Visible = false
+		if pet:IsA('Frame') then
+			if pet.Name == petName and pet.PetDisplayFrame.ImageLabel.Visible == true then
+				pet.PetDisplayFrame.ImageLabel.Visible = false
 				break
 			end
 		end
@@ -118,9 +118,9 @@ end)
 
 remotes.AttackingPet.OnClientEvent:Connect(function(petName)
 	for _, pet in pairs(player.PlayerGui.PetsDisplayGUI.SelectedFruits.ScrollingFrame:GetChildren()) do
-		if pet:IsA('ImageLabel') then
-			if pet.Name == petName and pet.Frame.Visible == false then
-				pet.Frame.Visible = true
+		if pet:IsA('Frame') then
+			if pet.Name == petName and pet.PetDisplayFrame.ImageLabel.Visible == false then
+				pet.PetDisplayFrame.ImageLabel.Visible = true
 				break
 			end
 		end

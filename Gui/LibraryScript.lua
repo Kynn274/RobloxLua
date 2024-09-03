@@ -15,14 +15,35 @@ local selected = nil
 local selectingPet = 0
 
 function createRarityHolder()
-	for _, groupPet in pairs(tableOfRarity) do
+	local defaultOrder = {
+		['Common'] = 1,
+		['Uncommon'] = 2,
+		['Rare'] = 3,
+		['Epic'] = 4,
+		['Legendary'] = 5
+	}
+	
+	-- Sort
+	local rarityList = {}
+	for _, grpet in pairs(tableOfRarity) do
+		table.insert(rarityList, defaultOrder[grpet[1].Rarity], grpet[1].Rarity)
+	end
+	
+	for i = 1, #rarityList do
+		if rarityList[i] == nil then
+			table.remove(rarityList, i)
+			i -= 1
+		end
+	end
+	
+	for i = 1, #rarityList do
 		local newFruitRarity = Character.FruitRarity:Clone()
-		newFruitRarity.Name = groupPet[1].Rarity
+		newFruitRarity.Name = rarityList[i]
 		newFruitRarity.Parent = Character
 		newFruitRarity.Visible = true
 		
 		local newFruitHolder = Character.FruitHolder:Clone()
-		newFruitHolder.Name = groupPet[1].Rarity..'Holder'
+		newFruitHolder.Name = rarityList[i]..'Holder'
 		newFruitHolder.Parent = Character
 		newFruitHolder.Visible = true
 		
@@ -33,17 +54,17 @@ function createRarityHolder()
 		elseif newFruitRarity.Name == 'Uncommon' then
 			newFruitRarity.TextLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
 		elseif newFruitRarity.Name == 'Rare' then
-			newFruitRarity.TextLabel.TextColor3 = Color3.fromRGB(85, 85, 255)
+			newFruitRarity.TextLabel.TextColor3 = Color3.fromRGB(39, 25, 191)
 		elseif newFruitRarity.Name == 'Epic' then
 			newFruitRarity.TextLabel.TextColor3 = Color3.fromRGB(200, 0, 255)
 		elseif newFruitRarity.Name == 'Legendary' then
 			newFruitRarity.TextLabel.TextColor3 = Color3.fromRGB(255, 235, 16)
 		end
-		createLibrary(groupPet, newFruitRarity.Name)
+		createLibrary(tableOfRarity[rarityList[i]], newFruitRarity.Name)
 		
 		
 		newFruitRarity.ImageButton.MouseButton1Click:Connect(function()
-			local number = #groupPet
+			local number = #tableOfRarity[rarityList[i]]
 			local row = math.ceil(number / 5)
 			
 			if newFruitHolder.OpenStatus.Value == 1 then
@@ -72,10 +93,10 @@ function showDetails(frame)
 		frame.ImageButton.got.Value = 1
 		selected = frame
 		
-		--CharacterDetails.Visible = true
-		tweenService:Create(Character, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.5, 0.75)}):Play()
-		tweenService:Create(SearchFruit, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.5, 0.1)}):Play()
-		tweenService:Create(CharacterDetails, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.35, 0.9)}):Play()
+		CharacterDetails.Visible = true
+		tweenService:Create(Character, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.55, 0.8)}):Play()
+		--tweenService:Create(SearchFruit, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.5, 0.08)}):Play()
+		tweenService:Create(CharacterDetails, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.35, 0.8)}):Play()
 		for _, grid in pairs(Character:GetDescendants()) do
 			if grid:IsA('UIGridLayout') then
 				grid.CellSize = UDim2.fromScale(0.25, 1)
@@ -99,11 +120,11 @@ function showDetails(frame)
 			frame.ImageButton.got.Value = 0
 			selected = nil
 			
-			tweenService:Create(Character, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.9, 0.75)}):Play()
-			tweenService:Create(SearchFruit, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.9, 0.1)}):Play()
-			tweenService:Create(CharacterDetails, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0, 0.9)}):Play()
+			tweenService:Create(Character, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.96, 0.8)}):Play()
+			--tweenService:Create(SearchFruit, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.9, 0.08)}):Play()
+			tweenService:Create(CharacterDetails, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0, 0.8)}):Play()
 			task.wait(0.2)
-			--CharacterDetails.Visible = false
+			CharacterDetails.Visible = false
 			for _, grid in pairs(Character:GetDescendants()) do
 				if grid:IsA('UIGridLayout') then
 					grid.CellSize = UDim2.fromScale(0.2, 1)
@@ -153,11 +174,19 @@ function createLibrary(groupPet, rarity)
 			newPet.ImageButton.TextLabel.Visible = true
 			newPet.ImageButton.TextLabel.Text = petName
 			newPet.ImageButton.Interactable = true
+			
+			newPet.ImageButton.MouseEnter:Connect(function()
+				tweenService:Create(newPet.ImageButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.5, 0.5)}):Play()
+			end)
+
+			newPet.ImageButton.MouseLeave:Connect(function()
+				tweenService:Create(newPet.ImageButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.6, 0.6)}):Play()
+			end)
+
+			newPet.ImageButton.MouseButton1Click:Connect(function()
+				showDetails(newPet)
+			end)
 		end
-		
-		newPet.ImageButton.MouseButton1Click:Connect(function()
-			showDetails(newPet)
-		end)
 	end
 end
 
@@ -168,11 +197,20 @@ function updateLibrary()
 		if pet.status.Value == 1 or pet.number.Value > 0 then
 			local rarityHolder = Character:FindFirstChild(pet.rarity.Value..'Holder')
 			local frame = rarityHolder:FindFirstChild(pet.Name)
+			
 			if frame.ImageButton.unavailableImage.Visible == true then
 				frame.ImageButton.unavailableImage.Visible = false
 				frame.ImageButton.TextLabel.Visible = true
 				frame.ImageButton.TextLabel.Text = pet.Name
 				frame.ImageButton.Interactable = true
+				
+				frame.ImageButton.MouseEnter:Connect(function()
+					tweenService:Create(frame.ImageButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.5, 0.5)}):Play()
+				end)
+				
+				frame.ImageButton.MouseLeave:Connect(function()
+					tweenService:Create(frame.ImageButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.6, 0.6)}):Play()
+				end)
 				
 				frame.ImageButton.MouseButton1Click:Connect(function()
 					showDetails(frame)
@@ -195,7 +233,7 @@ end
 
 function searchFruit()
 	local text = string.lower(SearchFruit.TextBox.Text)
-	local item = nil
+	local item = nil	
 	
 	if text ~= '' then
 		for _, fruit in pairs(Character:GetDescendants()) do
@@ -241,3 +279,9 @@ end
 game.ReplicatedStorage.Remotes.PetLibrary.OnClientEvent:Connect(updateLibrary)
 game.ReplicatedStorage.Remotes.CreateLibrary.OnClientEvent:Connect(createRarityHolder)
 SearchFruit.ImageButton.MouseButton1Click:Connect(searchFruit)
+SearchFruit.ImageButton.MouseEnter:Connect(function()
+	tweenService:Create(SearchFruit.ImageButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.7, 0.7)}):Play()
+end)
+SearchFruit.ImageButton.MouseLeave:Connect(function()
+	tweenService:Create(SearchFruit.ImageButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.8, 0.8)}):Play()
+end)

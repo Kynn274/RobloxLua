@@ -3,7 +3,7 @@ local FruitData = require(game.Workspace.MainFolder_Workspace.Fruits.GachaTree.D
 local Pets = game.ReplicatedStorage:WaitForChild("Pets")
 local player = game.Players.LocalPlayer
 
-game.ReplicatedStorage.Remotes.GameLoadingCompleted.OnClientEvent:Connect(function()
+game.ReplicatedStorage.Remotes.CreateDropRateBoard.OnClientEvent:Connect(function()
 	local PlayerGui = player.PlayerGui
 	local FruitsFrame = PlayerGui.DropRateBoard.Fruits
 	for _, pet in ipairs(Pets:GetChildren()) do
@@ -14,7 +14,6 @@ game.ReplicatedStorage.Remotes.GameLoadingCompleted.OnClientEvent:Connect(functi
 		PetDisplayFrame.Parent = FruitsFrame.ScrollingFrame
 		PetDisplayFrame.UIStroke.UIGradient.Rotation = -45
 		PetDisplayFrame.UIStroke.Thickness = 25
-		--print(1)
 		
 		local Pet = player.PetLibrary:FindFirstChild(pet.Name)
 		if Pet.rarity.Value == "Common" then
@@ -34,7 +33,6 @@ game.ReplicatedStorage.Remotes.GameLoadingCompleted.OnClientEvent:Connect(functi
 			PetDisplayFrame:FindFirstChild(pet.Name .. "DropRate").DropRateText.Text = tostring(string.format("%.2f",FruitData.fruitPets.Legendary[1].chance)) .. "%" 
 		end
 
-
 		local newpet = pet:Clone()
 		local Model3D = Module3D:Attach3D(PetDisplayFrame,newpet)
 		Model3D:SetDepthMultiplier(1.2)
@@ -44,18 +42,7 @@ game.ReplicatedStorage.Remotes.GameLoadingCompleted.OnClientEvent:Connect(functi
 		game:GetService("RunService").RenderStepped:Connect(function()
 			Model3D:SetCFrame(CFrame.Angles(0,tick() % (math.pi * 2),0) * CFrame.Angles(math.rad(-10),0,0))
 		end)
-		--local Frame = Instance.new("Frame")
-		--Frame.Name = "PetDisplayFrame"
 	end
 
 	PlayerGui.DropRateBoard.Fruits.ScrollingFrame.PetDisplayFrame.Visible = false
 end)
-
---local Model3D = Module3D:Attach3D(Frame,Apple)
---Model3D:SetDepthMultiplier(1.2)
---Model3D.Camera.FieldOfView = 5
---Model3D.Visible = true
-
---game:GetService("RunService").RenderStepped:Connect(function()
---	Model3D:SetCFrame(CFrame.Angles(0,tick() % (math.pi * 2),0) * CFrame.Angles(math.rad(-10),0,0))
---end)

@@ -1,6 +1,8 @@
 local store = script.Parent
 local storeData = require(game.ReplicatedStorage.JSON.StoreData)
 local player = game.Players.LocalPlayer
+local MPS = game:GetService("MarketplaceService")
+local Module3D = require(game.ReplicatedStorage:WaitForChild("Module3D"))
 
 for _, frame in pairs(store.Frame.Selection:GetChildren()) do
 	if frame:IsA('Frame') then
@@ -50,14 +52,32 @@ local check = false
 function updateProducts(name)
 	local Product = storeData[name]
 	local Store = store.Frame:WaitForChild(name..'Products')
+	local number = table.maxn(Product)
 	
-	for _, item in pairs(Product) do
+	
+	for i = 1, number do
+		local item = Product[i]
 		--print(item)
 		local newProduct = Store.Item:Clone()
-		newProduct.ImageLabel.Image = item.Image
+		
+		if item.Image ~= '' then
+			newProduct.ImageLabel.Image = item.Image
+		elseif item.Model ~= '' then
+			local productModel = game.ReplicatedStorage.Chest:FindFirstChild(item.Model):Clone()
+			local Model3D = Module3D:Attach3D(newProduct.ViewPort.ProductDisplayFrame, productModel)
+			Model3D:SetDepthMultiplier(1.2)
+			Model3D.Camera.FieldOfView = 5
+			Model3D.Visible = true
+
+			game:GetService("RunService").RenderStepped:Connect(function()
+				Model3D:SetCFrame(CFrame.Angles(0,tick() % (math.pi * 2),0) * CFrame.Angles(math.rad(-10),0,0))
+			end)
+		end
+		
 		newProduct.name.Text = item.Name
 		newProduct.Name = item.Name
-		newProduct.Price.Text = '['..tostring(item.Price)..' '..item.Currency..']'
+		--newProduct.Price.Text = '['..tostring(item.Price)..' '..item.Currency..']'
+		newProduct.Buy.Text = tostring(item.Price)..' '..item.Currency
 		newProduct.Parent = Store
 		
 		newProduct.MouseEnter:Connect(function()
@@ -77,9 +97,12 @@ function updateProducts(name)
 		newProduct.MouseLeave:Connect(function()
 			if check == newProduct.Name then
 				Store.Parent.Note.Visible = false
-			
 			end
 		end)	
+		
+		newProduct.Buy.MouseButton1Click:Connect(function()
+			buyProduct(name, i)
+		end)
 		
 	end
 	
@@ -87,6 +110,39 @@ function updateProducts(name)
 	Store.Item.Interactable = false
 end
 
+function buyProduct(kind, indexNum)
+	local productDetail = storeData[kind][indexNum]
+	if productDetail.Id ~= '' then
+		MPS:PromptProductPurchase(player,productDetail.Id)
+		local PlayerId=player.UserId
+		local GamepassId=productDetail.Id
+		local success, errormessage = pcall(function()
+			MPS.PromptProductPurchaseFinished:Connect(function(PlayerId, GamepassId, IsPurchased)
+				if IsPurchased == true then
+					game.ReplicatedStorage.Remotes.ProductsProcessing:FireServer(kind, indexNum)
+					--player.leaderstats.Diamonds.Value += productDetail.Value
+				end
+			end)
+		end)
+
+		if not success then
+			print("uh oh it failed...error:", errormessage)
+		end	
+	else
+		if productDetail.Currency == 'Diamonds' then
+			if player.leaderstats.Diamonds.Value >= productDetail.Price then
+				game.ReplicatedStorage.Remotes.ProductsProcessing:FireServer(kind, indexNum)
+			end
+		elseif productDetail.Currency == 'Coins' then
+			if player.leaderstats.Coins.Value >= productDetail.Price then
+				game.ReplicatedStorage.Remotes.ProductsProcessing:FireServer(kind, indexNum)
+			end
+		end		
+	end
+end
+
+
 updateProducts('Boost')
 updateProducts('Gold')
 updateProducts('Diamond')
+updateProducts('Fruits')

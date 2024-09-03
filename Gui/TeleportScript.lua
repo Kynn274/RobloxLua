@@ -9,7 +9,7 @@ local CheckPoints = game.Workspace.MainFolder_Workspace.Checkpoint
 local areasData = require(game.ReplicatedStorage.JSON.AreasData)
 
 -- UI
-local darkScreen = player.PlayerGui:WaitForChild('DarkScreen')
+--local darkScreen = player.PlayerGui:WaitForChild('DarkScreen')
 local frames = player.PlayerGui:WaitForChild('Frames')
 local purchaseDoor = player.PlayerGui:WaitForChild('PurchaseDoor')
 
@@ -42,19 +42,19 @@ function teleEffect()
 
 	local tweenlf2 = tweenService:Create(lf2,tweenInfo2,{Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
 	local tweenrf2 = tweenService:Create(rf2,tweenInfo2,{Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
-	wait(0.25)
+	task.wait(0.25)
 	local tweenlf1 = tweenService:Create(lf1,tweenInfo1,{Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
 	local tweenrf1 = tweenService:Create(rf1,tweenInfo1,{Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
-	wait(0.25)
+	task.wait(0.25)
 	local tweenWholeScreen = tweenService:Create(WholeScreen,tweenInfo2,{BackgroundTransparency = 0}):Play()
-	wait(0.8)
+	task.wait(0.8)
 	local tweenlf1 = tweenService:Create(lf1,tweenInfo1,{Position = UDim2.new(-0.5, 0, 0.5, 0)}):Play()
 	local tweenrf1 = tweenService:Create(rf1,tweenInfo1,{Position = UDim2.new(1.5, 0, 0.5, 0)}):Play()
-	wait(0.25)
+	task.wait(0.25)
 	local tweenlf1 = tweenService:Create(lf2,tweenInfo1,{Position = UDim2.new(-0.5, 0, 0.5, 0)}):Play()
 	local tweenrf1 = tweenService:Create(rf2,tweenInfo1,{Position = UDim2.new(1.5, 0, 0.5, 0)}):Play()
-	wait(0.25)
-	wait(1.2)
+	task.wait(0.25)
+	task.wait(1.2)
 	playerInWorkspace.HumanoidRootPart.Anchored = false
 	local tweenWholeScreen = tweenService:Create(WholeScreen,tweenInfo2,{BackgroundTransparency = 1}):Play()
 end
@@ -75,10 +75,10 @@ function openedArea(area)
 	area.Content.TextButton.MouseButton1Click:Connect(function()
 		if area.Content.TextButton.Text == 'Go' then
 			local frameTrigger = require(player.PlayerGui.FrameTrigger)
-
-			game.ReplicatedStorage.Remotes.Tele:FireServer(area.Name)
 			frameTrigger.CloseFrame('Teleport')
 			teleEffect()
+			game.ReplicatedStorage.Remotes.Tele:FireServer(area.Name)
+			frameTrigger.OpenFrame('Teleport')
 		end
 	end)	
 end
@@ -208,7 +208,7 @@ game.ReplicatedStorage.Remotes.CreateTeleport.OnClientEvent:Connect(function()
 	scrollingFrame.Frame:Destroy()
 end)
 
-frames.Teleport.Frame.ImageButton.MouseButton1Click:Connect(function()
+frames.Teleport.Frame.CloseButton.MouseButton1Click:Connect(function()
 	local frameTrigger = require(player.PlayerGui.FrameTrigger)
 	frameTrigger.CloseFrame('Teleport')
 end)

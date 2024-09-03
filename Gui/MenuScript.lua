@@ -1,78 +1,97 @@
+-- Service
 local player = game.Players.LocalPlayer
-
 local tweenService = game.TweenService
 local runService = game["Run Service"]
 
+-- UI
 local menu = player.PlayerGui:WaitForChild('Menu')
 local frames = player.PlayerGui:WaitForChild('Frames')
+
+-- Module
 local frameTrigger = require(player.PlayerGui:WaitForChild('FrameTrigger'))
 
-local open = false
+-- Var
+local open = 1
 
-menu.MenuButton.MouseEnter:Connect(function()
-	tweenService:Create(menu.MenuButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.15, 0.15)}):Play()
-end)
-menu.MenuButton.MouseLeave:Connect(function()
-	tweenService:Create(menu.MenuButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.2, 0.2)}):Play()
-end)
-
-menu.Teleport.MouseEnter:Connect(function()
-	tweenService:Create(menu.Teleport, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.075, 0.075)}):Play()
-end)
-menu.Teleport.MouseLeave:Connect(function()
-	tweenService:Create(menu.Teleport, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.1, 0.1)}):Play()
-end)
-
-
-runService.RenderStepped:Connect(function()
-	menu.MenuButton.UIStroke.UIGradient.Rotation += 2
-end)
-
-runService.RenderStepped:Connect(function()
-	menu.Teleport.UIStroke.UIGradient.Rotation += 2
-end)
-
-menu.MenuButton.MouseButton1Click:Connect(function()
-	if open == false then
-		menu.Frame.Visible = true
-		for _, bt in pairs(menu.Frame:GetChildren()) do
-			tweenService:Create(bt, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.3, 0.3)}):Play()
-			task.wait(0.15)
-			
-			bt.MouseEnter:Connect(function()
-				tweenService:Create(bt, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.2, 0.2)}):Play()
-				bt.Note.Size = UDim2.new(1.5,0,0.5,0)
-				bt.Note.Text = bt.Name
-				bt.Note.Visible = true
-				bt.Note.TextScaled = true
+for _, button in pairs(menu:GetDescendants()) do
+	if button:IsA('GuiButton') then		
+		if button.Parent:IsA('Frame') and button.Name ~= 'Expand' then
+			button.MouseButton1Click:Connect(function()
+				frameTrigger.OpenFrame(button.Parent.Name)
+				frames.OpenOnScreen.Value = button.Parent.Name
+				frames.TextButton.Visible = true
+				
+				for _, frame in pairs(menu.Frame:GetDescendants()) do
+					if frame:IsA('GuiButton') then
+						frame.Interactable = false
+					end
+				end
+				
+			end)
+			button.MouseEnter:Connect(function()
+				tweenService:Create(button, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.9, 0.9)}):Play()
 			end)
 			
-			bt.MouseLeave:Connect(function()
-				tweenService:Create(bt, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.3, 0.3)}):Play()
-				bt.Note.Visible = false
+			button.MouseLeave:Connect(function()
+				tweenService:Create(button, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.9, 0.9)}):Play()
 			end)
-			
-			bt.MouseButton1Click:Connect(function()
-				frameTrigger.CloseAllFrame()
-				frameTrigger.OpenFrame(bt.Name)
-				player.PlayerGui.Frames.TextButton.Visible = true
+		else
+			button.MouseButton1Click:Connect(function()
+				if button.Name ~= 'Expand' then
+					frameTrigger.OpenFrame(button.Name)
+					frames.OpenOnScreen.Value = button.Name
+					frames.TextButton.Visible = true
+					
+					for _, frame in pairs(menu.Frame:GetDescendants()) do
+						if frame:IsA('GuiButton') then
+							frame.Interactable = false
+						end
+					end
+				end
 			end)
+			if button.Name == 'FruitInventory' then
+				button.MouseEnter:Connect(function()
+					tweenService:Create(button, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.26, 0.26)}):Play()
+				end)
+				
+				button.MouseLeave:Connect(function()
+					tweenService:Create(button, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.25, 0.25)}):Play()
+				end)
+			elseif button.Name == 'Teleport' then
+				button.MouseEnter:Connect(function()
+					tweenService:Create(button, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.16, 0.16)}):Play()
+				end)
+
+				button.MouseLeave:Connect(function()
+					tweenService:Create(button, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.15, 0.15)}):Play()
+				end)
+			end
 		end
-		menu.Frame.Visible = true
-		open = true
+		
+	end
+end
+
+menu.Frame.Expand.MouseEnter:Connect(function()
+	tweenService:Create(menu.Frame.Expand, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.6, 0.6)}):Play()
+end)
+
+menu.Frame.Expand.MouseLeave:Connect(function()
+	tweenService:Create(menu.Frame.Expand, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.5, 0.5)}):Play()
+end)
+
+menu.Frame.Expand.MouseButton1Click:Connect(function()
+	if open == 1 then
+		tweenService:Create(menu.Frame.Expand, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Rotation = 180}):Play()
+		
+		tweenService:Create(menu.Frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.15, 0.15)}):Play()
+		tweenService:Create(menu.Frame.SlideFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0, 1)}):Play()
+		open = 0
 	else
-		for _, bt in pairs(menu.Frame:GetChildren()) do
-			tweenService:Create(bt, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0, 0)}):Play()
-			task.wait(0.15)
-		end
-		menu.Frame.Visible = false
-		open = false
+		tweenService:Create(menu.Frame.Expand, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Rotation = 0}):Play()
+
+		tweenService:Create(menu.Frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(1.05, 0.15)}):Play()
+		tweenService:Create(menu.Frame.SlideFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(1, 1)}):Play()
+		open = 1
 	end
 end)
 
-menu.Teleport.MouseButton1Click:Connect(function()
-	frames.Teleport.Visible = true
-	frames.TextButton.Visible = true
-	tweenService:Create(menu.Teleport, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0.1, 0.1)}):Play()
-	tweenService:Create(frames.Teleport, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(2, 2)}):Play()
-end)

@@ -1,5 +1,5 @@
 local icon = {
-	Diamond = 'rbxassetid://18733712657',
+	Diamond = 'rbxassetid://88138214590691',
 	Gold = 'rbxassetid://18733710062',
 	Gacha = 'rbxassetid://18735603559',
 	Selected = 'rbxassetid://18796950201',
@@ -9,7 +9,11 @@ local icon = {
 	LegendaryLuckBoost = 'rbxassetid://18826766587',
 	EpicLuckBoost = 'rbxassetid://18833576169',
 	GoldPot = 'rbxassetid://18841602640',
-	GoldChest = 'rbxassetid://18841608898',
+	GoldChest = 'rbxassetid://127725706226509',
+	Search = 'rbxassetid://18942742468',
+	Cross = 'rbxassetid://18928719774',
+	GoldBar = 'rbxassetid://127406641275092',
+	DiamondChest = 'rbxassetid://122704075649076',
 	
 	Fruit = {
 		FruitIcon = {

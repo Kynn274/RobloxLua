@@ -1,30 +1,8 @@
 local player = game.Players.LocalPlayer
-local diamondText = script.Parent.Diamond.TextLabel
-local goldText = script.Parent.Gold.TextLabel
-local frameTrigger = require(player.PlayerGui.FrameTrigger)
-
-function update(Data)
-	diamondText.Text = tostring(Data.Diamonds)
-	wait(0.1)
-	goldText.Text = tostring(Data.Coins)
-	
-	--local maxlen = math.max(diamondText.TextBounds.X, goldText.TextBounds.X + 50) + 100
-	--diamondText.Parent.Size = UDim2.new(0, maxlen, 0.15, 0)
-	--goldText.Parent.Size = UDim2.new(0, maxlen, 0.15, 0)
-	--diamondText.Size = UDim2.new(0, maxlen, 0.15, 0)
-	--goldText.Size = UDim2.new(0, maxlen, 0.15, 0)
-	
-	if player.leaderstats.Rebirth.Value > 0 then
-		goldText.Parent.Boost.BackgroundColor3 = Color3.fromRGB(58, 58, 58)
-		goldText.Parent.Boost.BackgroundTransparency = 0.2
-		goldText.Parent.Boost.Visible = true
-		goldText.Parent.Boost.Text = 'x '..tostring(1 + player.leaderstats.Rebirth.Value / 2)
-		goldText.Parent.Boost.TextColor3 = Color3.fromRGB(255,255,255)
-	end
-end
+local frameTrigger = require(player.PlayerGui:WaitForChild('FrameTrigger'))
 
 for _, it in pairs(script.Parent:GetChildren()) do
-	if it:IsA('ImageLabel') then
+	if it:IsA('GuiLabel') then
 		it.PlusButton.MouseButton1Click:Connect(function()
 			frameTrigger.OpenFrame('Shop')
 			for _, frame in pairs(player.PlayerGui.Frames.Store.Frame:GetChildren()) do
@@ -51,4 +29,20 @@ for _, it in pairs(script.Parent:GetChildren()) do
 	end
 end
 
-game.ReplicatedStorage.Remotes.GetPlayerData.OnClientEvent:Connect(update)
+game.ReplicatedStorage.Remotes.UpdateCurrencyClient.OnClientEvent:Connect(function()
+	local frameTrigger = require(player.PlayerGui.FrameTrigger)
+	local diamondText = player.PlayerGui.Currency.Diamond.TextLabel 
+	local goldText = player.PlayerGui.Currency.Gold.TextLabel 
+	
+	diamondText.Text = tostring(player.leaderstats.Diamonds.Value)
+	wait(0.1)
+	goldText.Text = tostring(player.leaderstats.Coins.Value)
+
+	if player.leaderstats.Rebirth.Value > 0 then
+		goldText.Parent.Boost.BackgroundColor3 = Color3.fromRGB(58, 58, 58)
+		goldText.Parent.Boost.BackgroundTransparency = 0.2
+		goldText.Parent.Boost.Visible = true
+		goldText.Parent.Boost.Text = 'x '..tostring(1 + player.leaderstats.Rebirth.Value / 2)
+		goldText.Parent.Boost.TextColor3 = Color3.fromRGB(255,255,255)
+	end
+end)

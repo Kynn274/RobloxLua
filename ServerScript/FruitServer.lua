@@ -45,10 +45,10 @@ local function chooseRandomPet(petTable, boostNum, kind)
 	local randomNumber = math.random(1,100)
 	local weight = 0
 	local rarity
-		
+
 	local EpicBoostValue = 0
 	local LegendaryBoostValue = 0
-	
+
 	if boostNum == 1 then
 		if kind == 'Legendary' then
 			LegendaryBoostValue = 1
@@ -59,7 +59,7 @@ local function chooseRandomPet(petTable, boostNum, kind)
 		EpicBoostValue = 1
 		LegendaryBoostValue = 1
 	end
-	
+
 	if 0 < randomNumber and fruitData.commonDropRate - 2 * boostNum >= randomNumber then
 		rarity = 'Common'
 	elseif fruitData.commonDropRate - 2 * boostNum < randomNumber and randomNumber <= fruitData.commonDropRate + fruitData.uncommonDropRate - 4 * boostNum then
@@ -71,12 +71,12 @@ local function chooseRandomPet(petTable, boostNum, kind)
 	elseif fruitData.commonDropRate + fruitData.uncommonDropRate + fruitData.rareDropRate + fruitData.epicDropRate - 5 * LegendaryBoostValue < randomNumber and randomNumber <= fruitData.commonDropRate + fruitData.uncommonDropRate + fruitData.rareDropRate + fruitData.epicDropRate + fruitData.legendaryDropRate then
 		rarity = 'Legendary'
 	end
-	
+
 	local petGroup = fruitData.fruitPets[rarity]
 	local number = table.maxn(petGroup)
 
 	chosenPet = petGroup[math.random(1,number)]
-	
+
 	return chosenPet
 end
 
@@ -85,7 +85,7 @@ function gachaFruit(player)
 	local epicBoost = player.EpicBoost.Value
 	local BoostNumber = legendaryBoost + epicBoost
 	local kind = ''
-	
+
 	if BoostNumber == 1 then
 		if legendaryBoost == 1 then
 			kind = 'Legendary'
@@ -93,9 +93,9 @@ function gachaFruit(player)
 			kind = 'Epic'
 		end
 	end
-	
+
 	local chosenPet = chooseRandomPet(fruitData.fruitPets, BoostNumber, kind)
-	
+
 	local val = Instance.new("StringValue")
 	val.Name = tostring(chosenPet.Name)
 	val.Parent = player.Pets
@@ -126,11 +126,14 @@ function updatePet(player, tableOfGachaFruits)
 			player.PetLibrary:FindFirstChild(pet.Name).number.Value += 1
 			player.PetLibrary:FindFirstChild(pet.Name).status.Value = 1
 		end
+		print(currentPets)
 
-		local success, newPets = pcall(function()
-			return playerPets:UpdateAsync(player.UserId, currentPets)
+		local sc, newPets = pcall(function()
+			return playerPets:SetAsync(player.UserId, currentPets)
 		end)
-		if success then
+		print(sc)
+		if sc then
+			print(newPets)
 			remotes.PetLibrary:FireClient(player)
 		end
 	end
@@ -146,7 +149,7 @@ remotes.Gachax1.OnServerEvent:Connect(function(player)
 
 	gacha:Play()
 	idle:Stop()
-	
+
 	local chosenPet = gachaFruit(player)
 	table.insert(tableOfGachaFruits, chosenPet)
 	idle:Play()
@@ -157,16 +160,16 @@ remotes.Gachax1.OnServerEvent:Connect(function(player)
 	updatePet(player, tableOfGachaFruits)
 
 	remotes.FetchFruit:FireClient(player, tableOfGachaFruits)
-	Remotes.UpdateCurrencyClient:FireClient(player)
+	remotes.UpdateCurrencyClient:FireClient(player)
 end)
 
 remotes.Gachax10.OnServerEvent:Connect(function(player)
 	local tableOfGachaFruits = {}
 	local price = fruitData.fruitPrice * (1 + player.leaderstats.Rebirth.Value)
 	local currency = fruitData.fruitCurrency
-	
+
 	gacha:Play()
-	
+
 	player.leaderstats[currency].Value -= (price * 10)
 	for i = 1, 10 do
 		local chosenPet = gachaFruit(player)
@@ -178,7 +181,7 @@ remotes.Gachax10.OnServerEvent:Connect(function(player)
 	updatePet(player, tableOfGachaFruits)
 
 	remotes.FetchFruit:FireClient(player, tableOfGachaFruits)
-	Remotes.UpdateCurrencyClient:FireClient(player)
+	remotes.UpdateCurrencyClient:FireClient(player)
 end)
 
 remotes.SellFruit.OnServerEvent:Connect(function(player, list, price)
@@ -190,14 +193,14 @@ remotes.SellFruit.OnServerEvent:Connect(function(player, list, price)
 		for _, pet in pairs(list) do
 			currentPets[pet.Name].Number = pet.number.Value
 		end
-		local success, newPets = pcall(function()
-			return playerPets:UpdateAsync(player.UserId, currentPets)
+		local success, errormess = pcall(function()
+			playerPets:SetAsync(player.UserId, currentPets)
 		end)
 		if success then
 			print('Sold pets!')
 		end
 	end
-	
+
 	-- Update Coins
 	local success, newCoinsValue = pcall(function()
 		return playerCoins:IncrementAsync(player.UserId, price)
@@ -205,7 +208,7 @@ remotes.SellFruit.OnServerEvent:Connect(function(player, list, price)
 	if success then
 		player.leaderstats.Coins.Value = newCoinsValue
 	end
-	
+
 	remotes.UpdateCurrencyClient:FireClient(player)
 end)
 
@@ -214,49 +217,54 @@ remotes.ClaimDailyGifts.OnServerEvent:Connect(function(player, giftName)
 	local success, currentDailyGift = pcall(function()
 		return playerDailyGift:GetAsync(player.UserId)
 	end)
-	
+
 	if success then
 		currentDailyGift[giftName].Received = 1
-		local success, newDailyGift = pcall(function()
-			return playerDailyGift:UpdateAsync(player.UserId, currentDailyGift)
+		local success, errormess = pcall(function()
+			return playerDailyGift:SetAsync(player.UserId, currentDailyGift)
 		end)
 
 		if success then
-			player.DailyGiftReceived:FindFirstChild(giftName).Value = 1
-			if newDailyGift[giftName].Gold > 0 then
-				local success, newCoinsValue = pcall(function()
-					return playerCoins:IncrementAsync(player.UserId, newDailyGift[giftName].Gold)
-				end)
-				if success then
-					player.leaderstats.Coins.Value = newCoinsValue
-				end
-			end
-
-			if newDailyGift[giftName].Diamond > 0 then
-				local success, newDiamondValue = pcall(function()
-					return playerDiamonds:IncrementAsync(player.UserId, newDailyGift[giftName].Diamond)
-				end)
-				if success then
-					player.leaderstats.Diamonds.Value = newDiamondValue
-				end
-			end
-
-			if newDailyGift[giftName].Gacha > 0 then
-				local tableOfGachaFruits = {}
-				gacha:Play()
-
-				for i = 1, 10 do
-					local chosenPet = gachaFruit(player)
-					table.insert(tableOfGachaFruits, chosenPet)
+			local success, newDailyGift = pcall(function()
+				return playerDailyGift:GetAsync(player.UserId)
+			end)
+			if success then
+				player.DailyGiftReceived:FindFirstChild(giftName).Value = 1
+				if newDailyGift[giftName].Gold > 0 then
+					local success, newCoinsValue = pcall(function()
+						return playerCoins:IncrementAsync(player.UserId, newDailyGift[giftName].Gold)
+					end)
+					if success then
+						player.leaderstats.Coins.Value = newCoinsValue
+					end
 				end
 
-				-- Update Pet
-				updatePet(player, tableOfGachaFruits)
-				remotes.FetchFruit:FireClient(player, tableOfGachaFruits)
+				if newDailyGift[giftName].Diamond > 0 then
+					local success, newDiamondValue = pcall(function()
+						return playerDiamonds:IncrementAsync(player.UserId, newDailyGift[giftName].Diamond)
+					end)
+					if success then
+						player.leaderstats.Diamonds.Value = newDiamondValue
+					end
+				end
+
+				if newDailyGift[giftName].Gacha > 0 then
+					local tableOfGachaFruits = {}
+					gacha:Play()
+
+					for i = 1, 10 do
+						local chosenPet = gachaFruit(player)
+						table.insert(tableOfGachaFruits, chosenPet)
+					end
+
+					-- Update Pet
+					updatePet(player, tableOfGachaFruits)
+					remotes.FetchFruit:FireClient(player, tableOfGachaFruits)
+				end
 			end
 		end
 	end
-	
+
 	remotes.UpdateCurrencyClient:FireClient(player)
 end)
 

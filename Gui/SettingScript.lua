@@ -1,5 +1,7 @@
 local GeneralTab = script.Parent.Frame.GeneralTab.ScrollingFrame
 local DayNightTab = GeneralTab.DayNightTab
+local ResetTab = GeneralTab.Reset
+
 local GachaTree = workspace:WaitForChild("MainFolder_Workspace"):WaitForChild("Fruits"):WaitForChild("GachaTree")
 local TreeLeaves = GachaTree:WaitForChild("TreeLeaves")
 local SideBody = GachaTree:WaitForChild("SideBody")
@@ -49,3 +51,8 @@ end
 
 DayNightTab.Cover.MouseButton1Click:Connect(DayNight)
 DayNightTab.Cover.Button.MouseButton1Click:Connect(DayNight)
+
+-- Reset database
+ResetTab.Reset.MouseButton1Click:Connect(function()
+	game.ReplicatedStorage.Remotes.ResetDatabase:FireServer()
+end)

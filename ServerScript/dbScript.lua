@@ -35,6 +35,7 @@ local attributesList = {
 	'Rebirth',
 }
 
+
 -----------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------------------
 -- FUNCTION
@@ -50,6 +51,8 @@ function mainfunc(player)
 	pets(player)
 	dailyGift(player)
 	tasks(player)
+	onlineTime(player)
+	numOfDates(player)
 	epicBoost(player)
 	legendaryBoost(player)
 	rebirth(player)
@@ -70,7 +73,6 @@ function checkDead(player)
 	while task.wait(1) do
 		local character = workspace:WaitForChild(player.Name)
 
-		--print(character.Humanoid.Health)
 		if character.Humanoid.Health == 0 then
 			local t = true
 			coroutine.wrap(resetCharacter)(t, player)
@@ -81,7 +83,6 @@ end
 function resetCharacter(t, player)
 	wait(1)
 	while t == true do
-		--print(1123)
 		local playerCharacter = workspace:WaitForChild(player.Name)
 		if playerCharacter.Humanoid.Health == 100 then
 			task.wait(0.5)
@@ -102,7 +103,6 @@ function coins(player)
 	end)
 
 	if currentCoins ~= nil then
-		print(currentCoins)
 		player.leaderstats.Coins.Value = currentCoins
 	else
 		replicatedStorage.Remotes.Newplayer:FireClient(player)
@@ -152,8 +152,8 @@ function pets(player)
 		if currentPets ~= nil then
 			local petsList = currentPets
 			for index, pet in pairs (petsData) do
-				if not petsList[pet.key] then
-					table.insert(petsList, pet)
+				if not petsList[pet.Name] then
+					petsList[pet.Name] = pet
 				end
 			end
 			updatePetsClient(player, petsList)
@@ -278,20 +278,26 @@ function tasks(player)
 	end)
 	if success then
 		if currentTasks ~= nil then
+			print(currentTasks)
 			for _, taskType in pairs(tasksData) do
-				if currentTasks[taskType.key] then
-					for _, task in pairs (tasksData[taskType]) do
-						if not currentTasks[taskType] then
-							table.insert(currentTasks, task)
+				if currentTasks[taskType.Name] then
+					print(currentTasks[taskType.Name])
+					for _, tasks in pairs (tasksData[taskType.Name]) do
+						if tasks.Status then
+							print(tasks)
+							print(currentTasks[taskType.Name][tasks.Name])
+							if not currentTasks[taskType.Name][tasks.Name] then
+								currentTasks[taskType.Name][tasks.Name] = tasks
+							end
 						end
 					end
 				else
-					table.insert(currentTasks, taskType)
+					currentTasks[taskType.Name] = taskType
 				end
 			end
 
-			local success, newTasks = pcall(function()
-				return playerTasks:UpdateAsync(player.UserId, currentTasks)
+			local success, errormess = pcall(function()
+				return playerTasks:SetAsync(player.UserId, currentTasks)
 			end)
 			if success then
 				print('Updated tasks!')
@@ -428,15 +434,15 @@ function resetDailyTasks(player)
 	end)
 	if success then
 		local dailyTasks = currentTasks['DailyTasks']
-		for _, task in pairs(dailyTasks) do
-			if task.Received then
-				task.Received = 0
+		for _, t in pairs(dailyTasks) do
+			if t.Received then
+				t.Received = 0
 			end
 		end
 		currentTasks['DailyTasks'] = dailyTasks
 
-		local sc, newTasks = pcall(function()
-			playerTasks:UpdateAsync(player.UserId, currentTasks)
+		local sc, errormess = pcall(function()
+			playerTasks:SetAsync(player.UserId, currentTasks)
 		end)
 		if sc then
 			print('Reset daily tasks successfully!')
@@ -454,8 +460,8 @@ function resetDailyGift(player)
 				gift.Received = 0
 			end
 		end
-		local sc, newDailyGift = pcall(function()
-			playerDailyGift:UpdateAsync(player.UserId, currentDailyGift)
+		local sc, errormess = pcall(function()
+			playerDailyGift:SetAsync(player.UserId, currentDailyGift)
 		end)
 		if sc then
 			print('Reset daily gifts successfully!')
@@ -474,7 +480,6 @@ function updateDailyGiftsReceived(player)
 		return playerDailyGift:GetAsync(player.UserId)
 	end)
 	if success then
-		print(currentDailyGift)
 		for i = 1, 7 do
 			local address = 'Day'..tostring(i)
 			local newDay = Instance.new('IntValue')
@@ -491,7 +496,6 @@ function updateDailyTasksReceived(player)
 	end)
 	if success then
 		local dailyTasks = currentTasks['DailyTasks']
-
 		for _, t in pairs(dailyTasks) do
 			if t.Received then
 				local newDailyTask = Instance.new('IntValue')
@@ -515,7 +519,7 @@ function updateDate(player, previousDay)
 
 	local yesterday = lastDay(Today)
 	local check = compare2Date(previousDay, yesterday)
-
+	
 	if check then -- Yesterday
 		-- Update Streak
 		local success, currentStreak = pcall(function()
@@ -523,12 +527,17 @@ function updateDate(player, previousDay)
 		end)
 		if success then
 			if currentStreak == 7 then
-				local success, newStreak = pcall(function()
-					return playerNumOfDates:UpdateAsync(player.UserId, 1)
+				local success, errormess = pcall(function()
+					return playerNumOfDates:SetAsync(player.UserId, 1)
 				end)
 				if success then
-					player.Streak.Value = newStreak
-					resetDailyGift(player)
+					local success, newStreak = pcall(function()
+						return playerNumOfDates:GetAsync(player.UserId)
+					end)
+					if success then
+						player.Streak.Value = newStreak
+						resetDailyGift(player)
+					end
 				end
 			else
 				local success, newStreak = pcall(function()
@@ -541,42 +550,56 @@ function updateDate(player, previousDay)
 		end
 
 		-- Update OnlineTime
-		local success, newOnlineTime = pcall(function()
-			return playerOnlineTime:UpdateAsync(player.UserId, 0)
+		local success, errormess = pcall(function()
+			return playerOnlineTime:SetAsync(player.UserId, 0)
 		end)
 		if success then
-			player.OnlineTime.Value = 0
+			local success, newOnlineTime = pcall(function()
+				return playerOnlineTime:GetAsync(player.UserId)
+			end)
+			if success then
+				player.OnlineTime.Value = newOnlineTime
+			end
 		end
 
 		-- Update PreviousDate
-		local success, newPreviousDate = pcall(function()
-			return playerPreviousDate:Update(player.UserId, Today)
+		local success, errormess = pcall(function()
+			return playerPreviousDate:SetAsync(player.UserId, Today)
 		end)
 		if success then 
-			print('Updated new day')
 			resetDailyTasks(player)
 		end
 	else
 		if not compare2Date(Today, previousDay) then
 			-- Update Streak
-			local success, newStreak = pcall(function()
-				return playerNumOfDates:UpdateAsync(player.UserId, 1)
+			local success, errormess = pcall(function()
+				return playerNumOfDates:SetAsync(player.UserId, 1)
 			end)
 			if success then
-				player.Streak.Value = newStreak
+				local success, newStreak = pcall(function()
+					return playerNumOfDates:GetAsync(player.UserId)
+				end)
+				if success then
+					player.Streak.Value = newStreak
+				end
 			end
 
 			-- Update OnlineTime
-			local success, newOnlineTime = pcall(function()
-				return playerOnlineTime:UpdateAsync(player.UserId, 0)
+			local success, errormess = pcall(function()
+				return playerOnlineTime:SetAsync(player.UserId, 0)
 			end)
 			if success then
-				player.OnlineTime.Value = newOnlineTime
+				local success, newOnlineTime = pcall(function()
+					return playerOnlineTime:GetAsync(player.UserId)
+				end)
+				if success then
+					player.OnlineTime.Value = newOnlineTime
+				end
 			end
 
 			-- Update PreviousDate
-			local success, newPreviousDate = pcall(function()
-				return playerPreviousDate:Update(player.UserId, Today)
+			local success, errormess = pcall(function()
+				return playerPreviousDate:SetAsync(player.UserId, Today)
 			end)
 			if success then 
 				print('Updated new day')
@@ -603,6 +626,7 @@ remotes.UpdateMoney.OnServerEvent:Connect(function(player, increasingCoin)
 
 	if success then
 		player.leaderstats.Coins.Value = newCoinsValue
+		remotes.UpdateCurrencyClient:FireClient(player)
 	end
 end)
 
@@ -613,23 +637,34 @@ remotes.UpdateDiamond.OnServerEvent:Connect(function(player, increasingDiamond)
 	end)
 	if success then
 		player.leaderstats.Diamonds.Value = newDiamondValue
+		remotes.UpdateCurrencyClient:FireClient(player)
 	end
 end)
 
 -- Rebirth
 remotes.Rebirth.OnServerEvent:Connect(function(player)
 	local success, updatedCoins = pcall(function()
-		return playerCoins:UpdateAsync(player.UserId, 0)
+		return playerCoins:SetAsync(player.UserId, 0)
 	end)
 	if success then
-		player.leaderstats.Coins.Value = updatedCoins
+		local success, updatedCoins = pcall(function()
+			return playerCoins:GetAsync(player.UserId)
+		end)
+		if success then
+			player.leaderstats.Coins.Value = updatedCoins
+		end
 	end
 
 	local success, updatedLevel = pcall(function()
-		return playerLevel:UpdateAsync(player.UserId, 1)
+		return playerLevel:SetAsync(player.UserId, 1)
 	end)
 	if success then
-		player.Level.Value = updatedLevel
+		local success, updatedLevel = pcall(function()
+			return playerLevel:GetAsync(player.UserId)
+		end)
+		if success then
+			player.Level.Value = updatedLevel
+		end
 	end
 
 	local success, updatedRebirth = pcall(function()
@@ -643,12 +678,114 @@ remotes.Rebirth.OnServerEvent:Connect(function(player)
 	playerCharacter.Humanoid.Health = 0
 end)
 
-game.Players.PlayerAdded:Connect(mainfunc)
-game.Players.PlayerRemoving:Connect(function(player)
-	local success, newOnlineTime = pcall(function()
-		return playerOnlineTime:Update(player.UserId, player.OnlineTime.Value)
+remotes.ResetDatabase.OnServerEvent:Connect(function(player)
+	-- Remove coins
+	local success, errormess = pcall(function()
+		playerCoins:RemoveAsync(player.UserId)
 	end)
 	if success then
+		print('Removed coins')
+	end
+	
+	-- Remove diamonds
+	local success, errormess = pcall(function()
+		playerDiamonds:RemoveAsync(player.UserId)
+	end)
+	if success then
+		print('Removed diamonds')
+	end
+	
+	-- Remove level
+	local success, errormess = pcall(function()
+		playerLevel:RemoveAsync(player.UserId)
+	end)
+	if success then
+		print('Removed level')
+	end
+	
+	-- Remove pets
+	local success, errormess = pcall(function()
+		playerPets:RemoveAsync(player.UserId)
+	end)
+	if success then
+		print('Removed pets')
+	end
+	
+	-- Remove dailygift
+	local success, errormess = pcall(function()
+		playerDailyGift:RemoveAsync(player.UserId)
+	end)
+	if success then
+		print('Removed dailygift')
+	end
+	
+	-- Remove tasks
+	local success, errormess = pcall(function()
+		playerTasks:RemoveAsync(player.UserId)
+	end)
+	if success then
+		print('Removed tasks')
+	end
+	
+	-- Remove online time
+	local success, errormess = pcall(function()
+		playerOnlineTime:RemoveAsync(player.UserId)
+	end)
+	if success then
+		print('Removed online time')
+	end
+	
+	-- Remove previous date
+	local success, errormess = pcall(function()
+		playerPreviousDate:RemoveAsync(player.UserId)
+	end)
+	if success then
+		print('Removed previous date')
+	end
+	
+	-- Remove legendary boost
+	local success, errormess = pcall(function()
+		playerLegendaryBoost:RemoveAsync(player.UserId)
+	end)
+	if success then
+		print('Removed legendary boost')
+	end
+	
+	-- Remove epic boost
+	local success, errormess = pcall(function()
+		playerEpicBoost:RemoveAsync(player.UserId)
+	end)
+	if success then
+		print('Removed epic boost')
+	end
+	
+	-- Remove numOfDates
+	local success, errormess = pcall(function()
+		playerNumOfDates:RemoveAsync(player.UserId)
+	end)
+	if success then
+		print('Removed numOfDates')
+	end
+	
+	-- Remove rebirth
+	local success, errormess = pcall(function()
+		playerRebirth:RemoveAsync(player.UserId)
+	end)
+	if success then
+		print('Removed rebirth')
+	end
+end)
+
+game.Players.PlayerAdded:Connect(mainfunc)
+game.Players.PlayerRemoving:Connect(function(player)
+	local success, errormess = pcall(function()
+		playerOnlineTime:SetAsync(player.UserId, player.OnlineTime.Value)
+	end)
+	if success then
+		local success, newOnlineTime = pcall(function()
+			return playerOnlineTime:GetAsync(player.UserId)
+		end)
+		print(newOnlineTime)
 		print('Saved online time!')
 	end
 end)

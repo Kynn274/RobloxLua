@@ -242,4 +242,4 @@ function Module3D:Attach3D(Frame,Model)
 	return Model3D
 end
 
-return Module3Ds
+return Module3D
