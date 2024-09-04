@@ -107,7 +107,7 @@ end
 -- Update Gold
 function updateGold(player, price)
 	local success, newCoinsValue = pcall(function()
-		return playerCoins:IncrementAsync(player.UserId, -price)
+		return playerCoins:IncrementAsync(player.UserId, (-1) * price)
 	end)
 	if success then
 		player.leaderstats.Coins.Value = newCoinsValue
@@ -170,13 +170,12 @@ remotes.Gachax10.OnServerEvent:Connect(function(player)
 
 	gacha:Play()
 
-	player.leaderstats[currency].Value -= (price * 10)
 	for i = 1, 10 do
 		local chosenPet = gachaFruit(player)
 		table.insert(tableOfGachaFruits, chosenPet)
 	end
 	-- Update Gold
-	updateGold(player)
+	updateGold(player, price)
 	-- Update Pet
 	updatePet(player, tableOfGachaFruits)
 

@@ -80,7 +80,9 @@ game.ReplicatedStorage.Remotes.CreateDailyTasks.OnClientEvent:Connect(function()
 
 			newFrame.Item.TextButton.MouseButton1Click:Connect(function()
 				game.ReplicatedStorage.Remotes.ClaimTasksGift:FireServer('DailyTasks', Task.Name)
-				tweenService:Create(newFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Visible = false}):Play()
+				tweenService:Create(newFrame.Item, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.fromScale(0, 0)}):Play()
+				task.wait(0.2)
+				newFrame.Visible = false
 			end)
 			coroutine.wrap(processingDailyTasks)(player, Task)
 		end

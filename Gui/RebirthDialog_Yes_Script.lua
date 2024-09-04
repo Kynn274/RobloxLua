@@ -4,8 +4,6 @@ yes.MouseButton1Click:Connect(function(player)
 	local player = game.Players.LocalPlayer
 	local plr=game.Players:WaitForChild(player.Name)
 	if plr.leaderstats.Coins.Value >= (price+price*plr.leaderstats.Rebirth.Value) then
-		--plr.leaderstats.Rebirth.Value += 1
-		--plr.leaderstats.Coins.Value = 0
 		
 		game.ReplicatedStorage.Remotes.Rebirth:FireServer()
 		
